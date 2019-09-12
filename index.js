@@ -1,4 +1,3 @@
-
 module.exports = function boxOpener(dispatch){
 	const command = dispatch.command || dispatch.require.command;
 	
@@ -9,13 +8,12 @@ module.exports = function boxOpener(dispatch){
 		isLooting = false,
 		location = null,
 		timer = null,
-		delay = 5500,
+		delay = 3050,
 		useDelay = false,
 		statOpened = 0,
 		statUsed = 0,
 		statStarted = null,
 		scanning = false,
-		boxId = 166901, // MWA box as default.
 		inventory = null;
 		
 	command.add('box', () => {
@@ -35,7 +33,7 @@ module.exports = function boxOpener(dispatch){
 		if(arg === "0")
 		{
 			useDelay = false;
-			delay = 5500;
+			delay = 3050;
 			command.message("Turning OFF minimum box opening delay, enjoy the speed");
 		}
 		else if(!isNaN(arg))
@@ -52,18 +50,23 @@ module.exports = function boxOpener(dispatch){
 	
 	dispatch.hook('C_PLAYER_LOCATION', 5, event =>{location = event});
 	
+	dispatch.game.initialize("inventory");
+	
+	dispatch.game.inventory.on('update', () => {
+		if(!enabled) return;
+		
+		isLooting = false; // event comes only after all S_SYSTEM_MESSAGE_LOOT_ITEM (probably)
+	});
+	
 	function load()
 	{
-		hook('S_INVEN', 18, event =>{
+		/*hook('S_INVEN', 18, event =>{ // pre patch 85
 			if(!enabled) return
 			
 			isLooting = false; // S_INVEN comes only after all S_SYSTEM_MESSAGE_LOOT_ITEM
-
 			if(event.first) inventory = []
 			else if(!inventory) return
-
 			for(let item of event.items) inventory.push(item)
-
 			if(!event.more) 
 			{
 				let box = false
@@ -84,21 +87,22 @@ module.exports = function boxOpener(dispatch){
 				inventory = [];
 				inventory = null
 			}
-		});
+		});*/
 		
 		hook('C_USE_ITEM', 3, event =>{
 			if(!scanning) return
 		
 			if(scanning){
 				boxEvent = event;
-				boxId = event.id;
-				command.message("Box set to: "+boxId+", proceeding to auto-open it with "  + (useDelay ? "a minimum " + (delay / 1000) + " sec delay" : "no delay" ));
+				boxEvent.dbid = 0n; // to open all inv slots
+				command.message("Box set to: "+event.id+", proceeding to auto-open it with "  + (useDelay ? "a minimum " + (delay / 1000) + " sec delay" : "no delay" ));
 				scanning = false;
 				
 				let d = new Date();
 				statStarted = d.getTime();
 				enabled = true;
 				timer = setTimeout(openBox,delay);
+				return true; // for consistency of sent data
 			}
 		});
 		
@@ -147,14 +151,22 @@ module.exports = function boxOpener(dispatch){
 	
 	function openBox() 
 	{
-		boxEvent.loc = location.loc;
-		boxEvent.w = location.w;
-		dispatch.toServer('C_USE_ITEM', 3, boxEvent);
-		if(useDelay)
+		if(dispatch.game.inventory.getTotalAmount(boxEvent.id) > 0)
 		{
-			statUsed++;	// counter for used items other than boxes
+			boxEvent.loc = location.loc;
+			boxEvent.w = location.w;
+			dispatch.toServer('C_USE_ITEM', 3, boxEvent);
+			if(useDelay)
+			{
+				statUsed++;	// counter for used items other than boxes
+			}
+			timer = setTimeout(openBox,delay);
 		}
-		timer = setTimeout(openBox,delay);
+		else
+		{
+			command.message("You ran out of boxes, stopping");
+			stop();
+		}
 	}
 	
 	function addZero(i) 

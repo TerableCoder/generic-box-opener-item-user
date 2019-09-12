@@ -1,5 +1,8 @@
 {
 	"files": {
+		"index.js": "643c83e9cff3c47c086093bcdc8dfb21caec5dccb68a93213a7233d86fc9d2a2",
+		"module.json": "dd9dc34b9ef94a560bba51c17ac4bea52811d26d5ef2e66f869a28e1b474567c",
+		"README.md": "4a82b827288a9d7f34cc1de1ff869ca1371d9a0144b960cf33f5501a56ff73b4"
 	},
 	"defs": {
 		"C_GACHA_TRY": 1,
@@ -7,7 +10,6 @@
 		"C_USE_ITEM": 3,
 		"S_GACHA_END": 1,
 		"S_GACHA_START": 1,
-		"S_INVEN": 18,
 		"S_SYSTEM_MESSAGE": 1,
 		"S_SYSTEM_MESSAGE_LOOT_ITEM": 1
 	}
